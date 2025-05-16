@@ -1,7 +1,7 @@
 from sqlalchemy import Integer, String, Float, ForeignKey, Sequence
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy_utils import LtreeType
+from sqlalchemy_utils import LtreeType, Ltree
 from typing import List
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -21,11 +21,14 @@ class Relationship_AO(Base):
 
 class ActORM(Base):
     __tablename__ = "activities"
+    __table_args__ = (
+        CheckConstraint("nlevel(path) <= 3", name="ck_activity_path_nlevel"),
+    )
 
     id: Mapped[int] = mapped_column(Sequence("activities_id_seq"), primary_key=True)
     label: Mapped[str] = mapped_column(nullable=False)
-    path: Mapped[str] = mapped_column(LtreeType, nullable=False, index=True)
-
+    path: Mapped[Ltree] = mapped_column(LtreeType, nullable=False, index=True)
+    
     orgs: Mapped[List["OrgORM"]] = relationship(
         secondary="rel_ao",
         back_populates="activities"

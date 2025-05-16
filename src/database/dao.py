@@ -3,6 +3,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy import func, update, cast, bindparam
 from loguru import logger
+from typing import List
 
 from database.orm import (
     Base, OrgORM, ActORM, BuildORM
@@ -30,7 +31,7 @@ class Database:
             logger.info("[+] Database engine successfully closed;")
             
     @classmethod
-    async def get_organization_by_id(cls: Database, org_id: int) -> OrgORM | None:
+    async def get_organization_by_id(cls, org_id: int) -> OrgORM | None:
         async with cls._sessionmaker() as session:
             stmt = (
                 select(OrgORM)
@@ -45,7 +46,7 @@ class Database:
             return result.scalar_one_or_none()
 
     @classmethod
-    async def get_organizations_by_bid(cls: Database, building_id: int) -> List[OrgORM] | None:
+    async def get_organizations_by_bid(cls, building_id: int) -> List[OrgORM] | None:
         async with cls._sessionmaker() as session:
             stmt = (
                 select(OrgORM)
@@ -57,45 +58,83 @@ class Database:
             )
             
             result = await session.execute(stmt)
-            return result.fetchall() if result else None
+            return result.scalars().all() if result else None
     
     @classmethod
-    async def get_organizations_by_activity(cls: Database, label: str, strict: bool = False) -> List[OrgORM] | None:
+    async def get_organizations_by_activity(cls, label: str, strict: bool = False) -> List[OrgORM] | None:
         async with cls._sessionmaker() as session:
             if strict:
                 stmt = (
                     select(OrgORM)
                     .join(OrgORM.activities)
                     .options(
-                        selectinload(OrgORM.activities)
+                        selectinload(OrgORM.activities),
+                        joinedload(OrgORM.building)
                     )
                     .where(ActORM.label == label)
                 )
             else:
-                parent_path = await session.execute(
+                parent_path = (await session.execute(
                     select(ActORM.path)
                     .where(ActORM.label == label)
-                ).scalar_one_or_none()
+                )).scalar_one_or_none()
                 
                 if parent_path is None:
                     return None
                 
-                allowed_act_ids = await session.execute(
+                allowed_act_ids = (await session.execute(
                     select(ActORM.id)
-                    .where(ActORM.path.op("@>")(parent_path))
-                ).fetchall()
+                    .where(ActORM.path.descendant_of(parent_path))
+                )).scalars().all()
                 
                 stmt = (
                     select(OrgORM)
                     .join(OrgORM.activities)
                     .options(
-                        selectinload(OrgORM.activities)
+                        selectinload(OrgORM.activities),
+                        joinedload(OrgORM.building)
                     )
                     .where(ActORM.id.in_(allowed_act_ids))
                 )
             
             result = await session.execute(stmt)
-            return result.fetchall() if result else None
+            return result.scalars().all() if result else None
         
-        
-        
+    @classmethod
+    async def buildings_within_radius(cls, lat: float, lon: float, radius: float) -> List[BuildORM] | None:
+        async with cls._sessionmaker() as session:
+            stmt = (
+                select(BuildORM)
+                .where(
+                    func.ST_DWithin(
+                        func.ST_MakePoint(BuildORM.lon, BuildORM.lat),
+                        func.ST_MakePoint(lon, lat),
+                        radius
+                    )
+                )
+            )
+            
+            result = await session.execute(stmt)
+            
+            return result.scalars().all() if result else None
+    
+    @classmethod
+    async def organizations_within_radius(cls, lat: float, lon: float, radius: float) -> List[OrgORM] | None:
+        async with cls._sessionmaker() as session:
+            stmt = (
+                select(OrgORM)
+                .options(
+                    joinedload(OrgORM.building)
+                )
+                .where(
+                    func.ST_DWithin(
+                        func.ST_MakePoint(BuildORM.lon, BuildORM.lat),
+                        func.ST_MakePoint(lon, lat),
+                        radius
+                    )
+                )
+            )
+            
+            result = await session.execute(stmt)
+            
+            return result.scalars().all() if result else None

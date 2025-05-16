@@ -6,7 +6,7 @@ authors = [
     {name = "alexey",email = "schwartzalexey@yandex.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "asyncpg (>=0.30.0,<0.31.0)",
     "sqlalchemy (>=2.0.41,<3.0.0)",
@@ -15,7 +15,9 @@ dependencies = [
     "alembic (>=1.15.2,<2.0.0)",
     "sqlalchemy-utils (>=0.41.2,<0.42.0)",
     "dotenv (>=0.9.9,<0.10.0)",
-    "uvicorn (>=0.34.2,<0.35.0)"
+    "uvicorn (>=0.34.2,<0.35.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "loguru (>=0.7.3,<0.8.0)"
 ]
 
 

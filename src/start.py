@@ -1,15 +1,17 @@
 from fastapi import FastAPI
-from utils.config import Config
-from database.dao import Database
 import uvicorn
 import asyncio
 
-async def entrypoint():
-    await Database.init(Config.DB_URL, Config.DB_MAX_CONNECTIONS)
+from config import Config
+from database.dao import Database
+from api.api import router
 
-    app = FastAPI()
+async def entrypoint():
+    await Database.init(Config.DB_URL, Config.DB_MAXCON)
+
+    app = FastAPI(docs_url="/documentation")
     
-    app.include_router(...)
+    app.include_router(router)
     
     uc_config = uvicorn.Config(
         app=app,
