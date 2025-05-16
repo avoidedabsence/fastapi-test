@@ -7,7 +7,27 @@ from database.models import ActivityOut, OrganizationOut, BuildingOut
 
 router = APIRouter()
 
-@router.get('/api/organization/id/{org_id}')
+@router.get('/api/organization/')
+async def search_for_organizations_h(
+    req: Request, query: str
+) -> JSONResponse:
+    
+    result = await Database.search_for_organizations(query)
+    if result: 
+        result = [OrganizationOut.model_validate(model).model_dump(exclude_none=True) for model in result]
+        
+        return result
+    
+    return JSONResponse(
+        {
+            'status': 'failed',
+            'message': 'Not Found'
+        },
+        404
+    )
+
+
+@router.get('/api/organization/id/')
 async def organization_by_self_id(
     req: Request, org_id: int
 ) -> JSONResponse:
@@ -25,7 +45,7 @@ async def organization_by_self_id(
     )
 
 
-@router.get('/api/organization/buildingId/{building_id}')
+@router.get('/api/organization/buildingId/')
 async def organizations_by_building_id(
     req: Request, building_id: int
 ) -> JSONResponse:
@@ -80,7 +100,7 @@ async def buildings_in_radius_m(
     )
 
 
-@router.get('/api/organization/activity/{label}')
+@router.get('/api/organization/activity/')
 async def organizations_by_activity_label(
     req: Request, label: str, strict: bool = Query(False, description=(
             "By default set to False.\n"

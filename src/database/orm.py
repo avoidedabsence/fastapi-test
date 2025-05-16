@@ -1,6 +1,7 @@
 from sqlalchemy import Integer, String, Float, ForeignKey, Sequence
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.schema import CheckConstraint
 from sqlalchemy_utils import LtreeType, Ltree
 from typing import List
 

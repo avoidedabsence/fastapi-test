@@ -101,23 +101,22 @@ class Database:
             return result.scalars().all() if result else None
         
     @classmethod
-    async def buildings_within_radius(cls, lat: float, lon: float, radius: float) -> List[BuildORM] | None:
+    async def search_for_organizations(cls, query: str) -> List[OrgORM] | None:
         async with cls._sessionmaker() as session:
             stmt = (
-                select(BuildORM)
+                select(OrgORM)
                 .where(
-                    func.ST_DWithin(
-                        func.ST_MakePoint(BuildORM.lon, BuildORM.lat),
-                        func.ST_MakePoint(lon, lat),
-                        radius
-                    )
+                    OrgORM.title.ilike(f"%{query}%")
+                )
+                .options(
+                    selectinload(OrgORM.activities),
+                    joinedload(OrgORM.building)
                 )
             )
             
             result = await session.execute(stmt)
-            
             return result.scalars().all() if result else None
-    
+
     @classmethod
     async def organizations_within_radius(cls, lat: float, lon: float, radius: float) -> List[OrgORM] | None:
         async with cls._sessionmaker() as session:
@@ -132,6 +131,29 @@ class Database:
                         func.ST_MakePoint(lon, lat),
                         radius
                     )
+                )
+                .options(
+                    selectinload(OrgORM.activities)
+                )
+            )
+            
+            result = await session.execute(stmt)
+            
+            return result.scalars().all() if result else None
+    
+    @classmethod
+    async def buildings_within_radius(cls, lat: float, lon: float, radius: float) -> List[BuildORM] | None:
+        async with cls._sessionmaker() as session:
+            stmt = (
+                select(BuildORM)
+                .where(
+                    func.ST_DWithin(
+                        func.ST_MakePoint(BuildORM.lon, BuildORM.lat),
+                        func.ST_MakePoint(lon, lat),
+                        radius
+                    )
+                ).options(
+                    selectinload(BuildORM.orgs)
                 )
             )
             
