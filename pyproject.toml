@@ -1,5 +1,5 @@
 [project]
-name = "fastapi-test"
+name = "nebus-test"
 version = "0.1.0"
 description = ""
 authors = [
@@ -17,7 +17,21 @@ dependencies = [
     "dotenv (>=0.9.9,<0.10.0)",
     "uvicorn (>=0.34.2,<0.35.0)",
     "psycopg2-binary (>=2.9.10,<3.0.0)",
-    "loguru (>=0.7.3,<0.8.0)"
+    "loguru (>=0.7.3,<0.8.0)",
+    "geoalchemy2 (>=0.17.1,<0.18.0)"
+]
+
+[tool.poetry]
+name = "nebus-test"
+version = "0.1.0"
+description = ""
+authors = [
+    "alexey schwartzalexey@yandex.com"
+]
+readme = "README.md"
+
+packages = [
+  { include = "src" }
 ]
 
 

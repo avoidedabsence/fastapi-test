@@ -31,6 +31,7 @@ class OrganizationOut(BaseModel):
         
     id: int
     title: str
+    phone: list[str]
     building: BuildingOut
     activities: Optional[List[ActivityOut]] = Field(default=None)
     

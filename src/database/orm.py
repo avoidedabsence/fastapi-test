@@ -1,5 +1,7 @@
 from sqlalchemy import Integer, String, Float, ForeignKey, Sequence
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.schema import CheckConstraint
 from sqlalchemy_utils import LtreeType, Ltree
@@ -53,6 +55,7 @@ class OrgORM(Base):
 
     id: Mapped[int] = mapped_column(Sequence("organizations_id_seq"), primary_key=True)
     title: Mapped[str] = mapped_column(unique=True, nullable=False)
+    phone: Mapped[list[str]] = mapped_column(MutableList.as_mutable(JSONB), nullable=False)
 
     b_id: Mapped[int] = mapped_column(
         ForeignKey("buildings.id", ondelete="CASCADE", onupdate="RESTRICT"),

@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
-from sqlalchemy import func, update, cast, bindparam
+from sqlalchemy import func, cast
+from geoalchemy2 import Geography
 from loguru import logger
 from typing import List
 
@@ -119,16 +120,25 @@ class Database:
 
     @classmethod
     async def organizations_within_radius(cls, lat: float, lon: float, radius: float) -> List[OrgORM] | None:
+        print(lat, lon, radius)
         async with cls._sessionmaker() as session:
             stmt = (
                 select(OrgORM)
+                .join(BuildORM, BuildORM.id == OrgORM.b_id)
                 .options(
-                    joinedload(OrgORM.building)
+                    joinedload(OrgORM.building),
+                    selectinload(OrgORM.activities)
                 )
                 .where(
                     func.ST_DWithin(
-                        func.ST_MakePoint(BuildORM.lon, BuildORM.lat),
-                        func.ST_MakePoint(lon, lat),
+                        cast(func.ST_SetSRID(
+                            func.ST_MakePoint(BuildORM.lon, BuildORM.lat),
+                            4326
+                        ), Geography),
+                        cast(func.ST_SetSRID(
+                            func.ST_MakePoint(lon, lat),
+                            4326
+                        ), Geography),
                         radius
                     )
                 )
@@ -148,8 +158,14 @@ class Database:
                 select(BuildORM)
                 .where(
                     func.ST_DWithin(
-                        func.ST_MakePoint(BuildORM.lon, BuildORM.lat),
-                        func.ST_MakePoint(lon, lat),
+                        cast(func.ST_SetSRID(
+                            func.ST_MakePoint(BuildORM.lon, BuildORM.lat),
+                            4326
+                        ), Geography),
+                        cast(func.ST_SetSRID(
+                            func.ST_MakePoint(lon, lat),
+                            4326
+                        ), Geography),
                         radius
                     )
                 ).options(

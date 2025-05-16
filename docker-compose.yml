@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgis/postgis:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PGUSER:-app}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-secret}
+      POSTGRES_DB: ${PGDATABASE:-appdb}
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - 5432
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    command: bash -c "while !</dev/tcp/postgres/5432; \
+      do sleep 1; \
+      done; \
+      poetry run alembic stamp head; \
+      poetry run alembic revision --autogenerate -m 'init'; \
+      poetry run alembic upgrade head; \
+      cd src; \
+      poetry run python generate_test_data.py; \
+      poetry run python start.py"
+
+volumes:
+  pgdata:

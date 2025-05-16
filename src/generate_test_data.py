@@ -1,9 +1,9 @@
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy import insert
-from src.database.orm import Base, BuildORM, OrgORM, ActORM, Relationship_AO
+from database.orm import Base, BuildORM, OrgORM, ActORM, Relationship_AO
 from sqlalchemy_utils import Ltree
-from src.config import Config
+from config import Config
 
 DATABASE_URL = Config.DB_URL
 
@@ -39,6 +39,7 @@ async def seed_data():
             org = OrgORM(
                 title=f"Организация #{i+1}",
                 b_id=builds[i % len(builds)].id,
+                phone=['2-222-222', '3-333-333', '8-923-666-13-13']
             )
             orgs.append(org)
         session.add_all(orgs)

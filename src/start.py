@@ -4,7 +4,7 @@ import asyncio
 
 from config import Config
 from database.dao import Database
-from api.api import router
+from api import router
 
 async def entrypoint():
     await Database.init(Config.DB_URL, Config.DB_MAXCON)

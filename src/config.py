@@ -18,12 +18,11 @@ class _Config():
                                                  getenv('PGPASSWORD', "secret"),
                                                  getenv('PGDATABASE', "appdb"))
     
-        db_url = f"postgresql+asyncpg://{pg_username}:{pg_password}@127.0.0.1:5432/{pg_database}"
+        db_url = f"postgresql+asyncpg://{pg_username}:{pg_password}@postgres:5432/{pg_database}"
         db_url_sync = db_url.replace("+asyncpg", "")
         db_maxcon = int(getenv('DB_MAXCON', 5))
         
-        host, port = (getenv('HOST', '0.0.0.0'),
-                      int(getenv('PORT', 8000)))
+        host, port = '0.0.0.0', 8000
         
         return _Config(
             HOST=host,
