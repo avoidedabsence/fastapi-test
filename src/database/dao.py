@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
-from sqlalchemy import func, cast
+from sqlalchemy import func, cast, text
 from geoalchemy2 import Geography
 from loguru import logger
 from typing import List
@@ -19,7 +19,11 @@ class Database:
         cls._engine = create_async_engine(db_url, echo=False, pool_size=max_conn)
         cls._sessionmaker = async_sessionmaker(cls._engine, expire_on_commit=False)
         async with cls._engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            '''await conn.execute(text(
+                "CREATE EXTENSION IF NOT EXISTS ltree;"  Генерируется в generate_test_data, при проде нужно вернуть
+            ))
+            await conn.run_sync(Base.metadata.create_all)''' 
+            ...
         logger.info(
             "[+] Database engine initialized with max {} connections;", max_conn
         )

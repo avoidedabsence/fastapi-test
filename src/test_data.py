@@ -1,21 +1,23 @@
 import asyncio
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy import insert
+from sqlalchemy import insert, text
+from database.dao import Database
 from database.orm import Base, BuildORM, OrgORM, ActORM, Relationship_AO
 from sqlalchemy_utils import Ltree
 from config import Config
 
-DATABASE_URL = Config.DB_URL
-
-engine = create_async_engine(DATABASE_URL, echo=True)
-Session = async_sessionmaker(engine, expire_on_commit=False)
-
-async def seed_data():
-    async with engine.begin() as conn:
+async def create_test_data():
+    async with Database._engine.begin() as conn:
+        
+        await conn.execute(
+            text(
+                "CREATE EXTENSION IF NOT EXISTS ltree;"
+            )
+        )
+        
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-
-    async with Session() as session:
+        
+    async with Database._sessionmaker() as session:
         builds = [
             BuildORM(addr=f"ул. Пушкина, дом {i}", lat=55.0 + i, lon=37.0 + i)
             for i in range(1, 6)
@@ -58,6 +60,3 @@ async def seed_data():
         session.add_all(rels)
 
         await session.commit()
-
-if __name__ == "__main__":
-    asyncio.run(seed_data())

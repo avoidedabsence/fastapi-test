@@ -1,13 +1,60 @@
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query, Request, Security, Depends
 from fastapi.responses import JSONResponse
-from typing import List, Union
+from fastapi.exceptions import HTTPException
+from fastapi.security import APIKeyHeader
+from datetime import datetime
+from typing import List
+import jwt
 
 from database.dao import Database
 from database.models import ActivityOut, OrganizationOut, BuildingOut
+from config import Config
 
 router = APIRouter()
 
-@router.get('/api/organization/', summary="Поиск организаций по названию", response_model=List[OrganizationOut], status_code=200)
+
+# auth placeholder -------
+API_KEY_NAME = "X-API-KEY"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+SECRET = Config.SECRET
+ALGO = "HS256"
+
+def check_key(api_key: str = Security(api_key_header)):
+    try:
+        data = jwt.decode(api_key, SECRET, algorithms=[ALGO])
+    except jwt.PyJWTError:
+        raise HTTPException(401, "Неверный API-ключ")
+    if data.get("scope") != "api-access":
+        raise HTTPException(401, "Неверный API-ключ")
+    return api_key
+# auth placeholder -------
+
+
+@router.get(
+    "/api/token",
+    summary="Получить токен"
+)
+async def get_token(
+    req: Request
+):
+    token = jwt.encode(
+        {
+            "encode-time": datetime.utcnow().strftime("%d %b %Y, %H:%M:%S"),
+            "scope": "api-access"
+        },
+        SECRET,
+        algorithm=ALGO
+    )
+    return {"api_key": token}
+
+@router.get(
+    '/api/organization/',
+    summary="Поиск организаций по названию",
+    response_model=List[OrganizationOut],
+    status_code=200,
+    dependencies=[Depends(check_key)]
+)
 async def search_for_organizations_h(
     req: Request,
     query: str = Query(..., description="Подстрока для поиска в названии организации")
@@ -28,7 +75,13 @@ async def search_for_organizations_h(
     )
 
 
-@router.get('/api/organization/id/', summary="Получить организацию по ID", response_model=OrganizationOut, status_code=200)
+@router.get(
+    '/api/organization/id/',
+    summary="Получить организацию по ID",
+    response_model=OrganizationOut,
+    status_code=200,
+    dependencies=[Depends(check_key)]
+)
 async def organization_by_self_id(
     req: Request,
     org_id: int = Query(..., description="ID организации")
@@ -47,7 +100,13 @@ async def organization_by_self_id(
     )
 
 
-@router.get('/api/organization/buildingId/', summary="Получить организации в здании", response_model=List[OrganizationOut], status_code=200)
+@router.get(
+    '/api/organization/buildingId/',
+    summary="Получить организации в здании",
+    response_model=List[OrganizationOut],
+    status_code=200,
+    dependencies=[Depends(check_key)]
+)
 async def organizations_by_building_id(
     req: Request,
     building_id: int = Query(..., description="ID здания")
@@ -66,7 +125,13 @@ async def organizations_by_building_id(
         }, status_code=404
     )
 
-@router.get('/api/organization/activity/', summary="Получить организации по деятельности", response_model=List[OrganizationOut], status_code=200)
+@router.get(
+    '/api/organization/activity/',
+    summary="Получить организации по деятельности",
+    response_model=List[OrganizationOut],
+    status_code=200,
+    dependencies=[Depends(check_key)]
+)
 async def organizations_by_activity_label(
     req: Request,
     label: str = Query(..., description="Название деятельности"),
@@ -94,7 +159,13 @@ async def organizations_by_activity_label(
     )
 
     
-@router.get('/api/organization/inRadius/', summary="Получить организации в радиусе", response_model=List[OrganizationOut], status_code=200)
+@router.get(
+    '/api/organization/inRadius/',
+    summary="Получить организации в радиусе",
+    response_model=List[OrganizationOut],
+    status_code=200,
+    dependencies=[Depends(check_key)]
+)
 async def organizations_in_radius_m(
     req: Request,
     radius: float = Query(..., description="Радиус в метрах"),
@@ -115,7 +186,13 @@ async def organizations_in_radius_m(
         }, status_code=404
     )
     
-@router.get('/api/buildings/inRadius/', summary="Получить здания в радиусе", response_model=List[BuildingOut], status_code=200)
+@router.get(
+    '/api/buildings/inRadius/',
+    summary="Получить здания в радиусе",
+    response_model=List[BuildingOut],
+    status_code=200,
+    dependencies=[Depends(check_key)]
+)
 async def buildings_in_radius_m(
     req: Request,
     radius: float = Query(..., description="Радиус в метрах"),

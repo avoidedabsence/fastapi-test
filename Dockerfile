@@ -11,10 +11,10 @@ ENV YOUR_ENV=${YOUR_ENV} \
   POETRY_VERSION=2.1.2
 
 RUN apt-get -y update; apt-get -y install curl build-essential pip
-RUN pip install poetry alembic
+RUN pip install six
+RUN pip install poetry
 
 WORKDIR /src
-COPY init.sql /docker-entrypoint-initdb.d/
 COPY . ./
 
 RUN poetry install
